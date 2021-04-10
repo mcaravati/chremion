@@ -1,0 +1,103 @@
+nav {
+    border: solid dimgrey 2px;
+    padding: 1vh 3vw;
+    border-radius: 10px;
+}
+
+ul {
+    padding: 0;
+    list-style: none;
+}
+
+nav li {
+    display: inline;
+}
+
+nav li:last-child {
+    float: right;
+}
+
+.app_link {
+    background-color: transparent;
+    border: solid black 2px;
+    padding: 1vh 3vw;
+    text-decoration: none;
+    color: black;
+    border-radius: 25px;
+    transition-duration: 0.4s;
+}
+
+.app_link:hover {
+    border-color: dimgrey;
+    background-color: dimgrey;
+    color: white;
+    cursor: pointer;
+}
+
+#disconnect_button {
+    border-color: darkred;
+    color: darkred;
+}
+
+#disconnect_button:hover {
+    border-color: darkred;
+    background-color: darkred;
+}
+
+main {
+    display: flex;
+    flex-wrap: nowrap;
+    margin: 1vh 0;
+    padding: 1vh 3vw;
+}
+
+section {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+    padding: 1vw;
+    height: 100%;
+    width: 50%;
+}
+
+section li {
+    padding: 1vh;
+}
+
+section > div {
+    align-self: center;
+    border: solid 2px dimgrey;
+    height: 100%;
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+section > div ul {
+    margin: 0;
+}
+
+section > div li {
+    display: block;
+    width: 100%;
+}
+
+section > ul li {
+    margin: 2vh 0;
+}
+
+section > div li:hover {
+    background-color: dimgrey;
+}
+
+.disabled {
+    background-color: dimgrey;
+    border-color: dimgrey;
+    cursor: initial;
+}
+
+.error_field {
+    text-align: center;
+    color: red;
+}
