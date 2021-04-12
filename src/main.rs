@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+use hex::decode;
 use actix_files::Files;
 use actix_web::{get, post, web, App, HttpResponse, HttpServer};
 use btleplug::api::{BDAddr, Central, Peripheral, WriteType};
@@ -19,6 +20,11 @@ use btleplug::corebluetooth::{adapter::Adapter, manager::Manager};
 use btleplug::winrtble::{adapter::Adapter, manager::Manager};
 
 use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize)]
+struct Frame {
+    glasses_frame: Vec<Vec<u8>>
+}
 
 /// Glasses struct to receive the glasses' name from HTML forms
 #[derive(Deserialize, Serialize)]
@@ -40,9 +46,9 @@ struct ErrorMessage {
     message: String,
 }
 
-/// Display "OwO ?" on the glasses (will be improved !)
-#[get("/display")]
-async fn display(shared_data: web::Data<Arc<Mutex<SharedData>>>) -> HttpResponse {
+/// Displays a frame on the glasses
+#[post("/display")]
+async fn display(shared_data: web::Data<Arc<Mutex<SharedData>>>, data: web::Json<Frame>) -> HttpResponse {
     // Try to get shared data
     let shared_data = match shared_data.lock() {
         Err(error) => {
@@ -53,6 +59,7 @@ async fn display(shared_data: web::Data<Arc<Mutex<SharedData>>>) -> HttpResponse
         }
         Ok(shared_data) => shared_data,
     };
+    let data = data.0;
 
     // Check if we've been connected to the glasses before
     match shared_data.glasses_address {
@@ -89,23 +96,7 @@ async fn display(shared_data: web::Data<Arc<Mutex<SharedData>>>) -> HttpResponse
             // Send byte array if write characteristic is found, else send HTTP error 500
             match write_characteristic {
                 Some(characteristic) => {
-                    let command: Vec<Vec<u8>> = vec![
-                        vec![
-                            0xFA, 0x03, 0x00, 0x39, 0x01, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00,
-                            0x00, 0x3C, 0x00, 0x00, 0x3C, 0x00, 0x3C, 0xF3,
-                        ],
-                        vec![
-                            0x00, 0x00, 0xF3, 0x00, 0xC3, 0xF3, 0x3C, 0x0C, 0xF3, 0x00, 0xC3, 0xF3,
-                            0x3C, 0xCC, 0xF3, 0x00, 0x0C, 0xF3, 0x3C, 0xCC,
-                        ],
-                        vec![
-                            0xF3, 0x00, 0x0C, 0xF3, 0x3C, 0xCC, 0xF3, 0x00, 0x00, 0x3C, 0x0F, 0x30,
-                            0x3C, 0x00, 0x0C, 0x00, 0x00, 0x00, 0x00, 0x00,
-                        ],
-                        vec![0x00, 0xC8, 0x55, 0xA9],
-                    ];
-
-                    for bytes_array in command {
+                    for bytes_array in data.glasses_frame {
                         glasses
                             .write(&characteristic, &bytes_array, WriteType::WithoutResponse)
                             .unwrap();
@@ -124,6 +115,58 @@ async fn display(shared_data: web::Data<Arc<Mutex<SharedData>>>) -> HttpResponse
             message: String::from("Please connect to a device first"),
         }),
     }
+}
+
+/// Encodes a model into a UART command
+#[post("/encode")]
+async fn encode(_shared_data: web::Data<Arc<Mutex<SharedData>>>, data: web::Json<Frame>) -> HttpResponse {
+    let mut binary_string = String::new();
+    let mut uart = String::from("fa030039010006");
+    let data = data.0;
+    let mut checksum: u8 = 7;
+    let mut result: Vec<Vec<u8>> = Vec::new();
+
+    for line in data.glasses_frame {
+        for pixel in line {
+            binary_string.push_str(match pixel {
+                0 => "00",
+                1 => "01",
+                2 => "10",
+                3 => "11",
+                _ => return HttpResponse::InternalServerError().json(ErrorMessage {
+                    message: String::from("Wrong value in frame")
+                })
+            });
+
+            if binary_string.len() == 8 {
+                let byte = isize::from_str_radix(&binary_string, 2).unwrap();
+                checksum ^= byte as u8;
+                uart.push_str(&format!("{:02x}", byte));
+                binary_string = String::new();
+            }
+        }
+    }
+
+    uart.push_str(&format!("{:02x}", checksum));
+    uart.push_str("55a9");
+
+    let decoded = decode(uart).unwrap();
+    let mut current_vec: Vec<u8> = Vec::new();
+
+    for byte in decoded {
+        current_vec.push(byte);
+
+        if current_vec.len() == 20 {
+            result.push(current_vec.clone());
+            current_vec = Vec::new();
+        }
+    }
+
+    result.push(current_vec.clone());
+
+    HttpResponse::Ok().json(Frame {
+        glasses_frame: result
+    })
 }
 
 /// Discovers BLE peripherals with a name and returns it as a JSON array
@@ -237,6 +280,13 @@ async fn home(_shared_data: web::Data<Arc<Mutex<SharedData>>>) -> HttpResponse {
         .body(include_str!("../static/home.html"))
 }
 
+#[get("/designer")]
+async fn designer(_shared_data: web::Data<Arc<Mutex<SharedData>>>) -> HttpResponse {
+    HttpResponse::Ok()
+        .content_type("text/html; charset=utf-8")
+        .body(include_str!("../static/designer.html"))
+}
+
 /// Connects to a BLE device
 #[post("/connect")]
 async fn connect(
@@ -342,6 +392,8 @@ async fn main() -> std::io::Result<()> {
             .service(disconnect)
             .service(discover)
             .service(home)
+            .service(encode)
+            .service(designer)
             .service(Files::new("/", "./static/"))
             .data(data.clone())
     })

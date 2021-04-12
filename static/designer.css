@@ -1,0 +1,26 @@
+.row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+}
+
+.pixel {
+    width: 2vw;
+    height: 2vw;
+    margin: 0.1%;
+    border-radius: 25%;
+    transition-duration: 0.4s;
+}
+
+.pixel:hover {
+    opacity: 50%;
+}
+
+main {
+    flex-direction: column;
+    align-items: center;
+}
+
+#glasses_display {
+    margin: 4vh 0;
+}
