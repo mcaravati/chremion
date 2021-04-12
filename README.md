@@ -9,12 +9,12 @@ This program is a WIP.
  - Write endpoints' documentation
  - Add configuration file
  - Make a good UI
- - Divide the web API into web API / library
  - Create tests
  - Hover display
  - Live display
  - Use rendering engine
  - Add error fields on all pages
+ - Disconnect on Ctrl+C
 
 ## Contributors
  - mcaravati

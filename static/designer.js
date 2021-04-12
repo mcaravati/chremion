@@ -7,6 +7,8 @@ const PIXEL_STATE = {
     OFF: "#000000"
 }
 
+let CURRENT_PIXEL_STATE = PIXEL_STATE.FULL;
+
 /**
  * Pixel class
  */
@@ -15,14 +17,14 @@ class Pixel {
         this.dom = dom;
         this.dom.className = "pixel";
         this.state = PIXEL_STATE.OFF;
+        this.dom.style.backgroundColor = PIXEL_STATE.OFF;
         this.disabled = false;
 
-        this.changeState(PIXEL_STATE.OFF);
-
-        this.dom.addEventListener("click", () => {
+        $(this.dom).on("click", (event) => {
             if(this.disabled) return;
 
-            this.changeState(this.state === PIXEL_STATE.OFF ? PIXEL_STATE.FULL : PIXEL_STATE.OFF);
+            this.changeState(this.state === PIXEL_STATE.OFF ? CURRENT_PIXEL_STATE : PIXEL_STATE.OFF);
+            display();
         });
     }
 
@@ -51,10 +53,29 @@ $(() => {
             disconnect();
     });
 
+    // Select pixel intensity to 100%
+    $("#full_pixel_button").on("click", () => {
+        CURRENT_PIXEL_STATE = PIXEL_STATE.FULL;
+    });
+
+    // Select pixel intensity to 50%
+    $("#mid_pixel_button").on("click", () => {
+        CURRENT_PIXEL_STATE = PIXEL_STATE.MID;
+    });
+
+    // Select pixel intensity to 25%
+    $("#quarter_pixel_button").on("click", () => {
+        CURRENT_PIXEL_STATE = PIXEL_STATE.QUARTER;
+    });
+
+    // Clear the designer's display
+    $("#clear_display_button").on("click", () => clear_display());
+
     // Initialize HTML wrapper
     let glassesWrapper = document.createElement("div");
     glassesWrapper.id = "glassesWrapper";
-    $("#glasses_display").append(glassesWrapper);
+    let editor = document.getElementById("glasses_editor");
+    editor.appendChild(glassesWrapper);
 
     // Pixels to be disabled around the nose
     const pixelsToBeDisabled = [
@@ -87,12 +108,7 @@ $(() => {
         }
     }
 
-    // Disable pixels around the nose
-    pixelsToBeDisabled.forEach(pixel => {
-        let objectPixel = GLASSES_DISPLAY[pixel[0]][pixel[1]];
-        objectPixel.dom.style.backgroundColor = "transparent";
-        objectPixel.disabled = true;
-    });
+    disableNosePixels();
 });
 
 function display() {
@@ -159,5 +175,38 @@ function disconnect() {
             let json = JSON.parse(data.responseText);
             $(".error_field").text(json.message);
         }
+    });
+}
+
+/**
+ * Clear the designer's display
+ */
+function clear_display() {
+    for (let rowIndex in GLASSES_DISPLAY) {
+        for (let pixelIndex in GLASSES_DISPLAY[rowIndex]) {
+            GLASSES_DISPLAY[rowIndex][pixelIndex].changeState(PIXEL_STATE.OFF);
+        }
+    }
+
+    disableNosePixels();
+    display();
+}
+
+function disableNosePixels() {
+    // Pixels to be disabled around the nose
+    const pixelsToBeDisabled = [
+        [7, 11],
+        [7, 12],
+        [8, 10],
+        [8, 11],
+        [8, 12],
+        [8, 13]
+    ];
+
+    // Disable pixels around the nose
+    pixelsToBeDisabled.forEach(pixel => {
+        let objectPixel = GLASSES_DISPLAY[pixel[0]][pixel[1]];
+        objectPixel.dom.style.backgroundColor = "transparent";
+        objectPixel.disabled = true;
     });
 }

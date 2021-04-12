@@ -21,6 +21,12 @@ main {
     align-items: center;
 }
 
-#glasses_display {
+#glasses_editor {
     margin: 4vh 0;
+}
+
+.editor_menu {
+    display: flex;
+    justify-content: space-evenly;
+    margin: 5vh 0;
 }
