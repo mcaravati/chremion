@@ -44,10 +44,6 @@ class Pixel {
  * Initialization function ran at the page loading
  */
 $(() => {
-    $("#display_button").on("click", () => {
-       display();
-    });
-
     // Bind disconnect button
     $("#disconnect_button").on("click", () => {
             disconnect();
@@ -151,14 +147,20 @@ function display() {
 
                 },
                 error: (data) => {
+                    let error_field = $(".error_field");
                     let json = JSON.parse(data.responseText);
-                    $(".error_field").text(json.message);
+                    error_field.text(json.message);
+
+                    setTimeout(() => error_field.text(""), 2000);
                 }
             });
         },
         error: (data) => {
+            let error_field = $(".error_field");
             let json = JSON.parse(data.responseText);
-            $(".error_field").text(json.message);
+            error_field.text(json.message);
+
+            setTimeout(() => error_field.text(""), 2000);
         }
     });
 }
@@ -172,8 +174,11 @@ function disconnect() {
         type: 'get',
         success: () => { },
         error: (data) => {
+            let error_field = $(".error_field");
             let json = JSON.parse(data.responseText);
-            $(".error_field").text(json.message);
+            error_field.text(json.message);
+
+            setTimeout(() => error_field.text(""), 2000);
         }
     });
 }
@@ -192,6 +197,9 @@ function clear_display() {
     display();
 }
 
+/**
+ * Disable the pixels around the nose
+ */
 function disableNosePixels() {
     // Pixels to be disabled around the nose
     const pixelsToBeDisabled = [

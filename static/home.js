@@ -11,7 +11,6 @@ $(() => {
     // Get buttons
     let connect_button = $("#connect_button");
     let disconnect_button = $("#disconnect_button");
-    let display_button = $("#display_button");
 
     // Disable buttons
     connect_button.addClass(".disabled");
@@ -33,39 +32,16 @@ $(() => {
 
     // Connect if button isn't disabled
     connect_button.on("click", () => {
-        if (!$("#connect_button").hasClass(".disabled")) {
+        if (!$("#connect_button").hasClass(".disabled") && SELECTED_DEVICE !== undefined) {
             connect();
         }
     });
 
     // Bind disconnect button
     disconnect_button.on("click", () => {
-        if (SELECTED_DEVICE !== undefined) {
-            disconnect();
-        }
-    });
-
-    // Bind display button
-    display_button.on("click", () => {
-        if (SELECTED_DEVICE !== undefined) {
-            display();
-        }
+        disconnect();
     });
 });
-
-/**
- * Simple call to /display endpoint, only displays "OwO ?" for the moment
- */
-function display() {
-    $.ajax({
-        url: '/display',
-        type: 'get',
-        error: (data) => {
-            let json = JSON.parse(data.responseText);
-            $(".error_field").text(json.message);
-        }
-    });
-}
 
 /**
  * AJAX request to disconnect from the current device
@@ -74,10 +50,16 @@ function disconnect() {
     $.ajax({
         url: '/disconnect',
         type: 'get',
-        success: () => discover_devices(),
+        success: () => {
+            $(".device_name").text("");
+            discover_devices();
+        },
         error: (data) => {
+            let error_field = $(".error_field");
             let json = JSON.parse(data.responseText);
-            $(".error_field").text(json.message);
+            error_field.text(json.message);
+
+            setTimeout(() => error_field.text(""), 2000);
         }
     });
 }
@@ -86,15 +68,20 @@ function disconnect() {
  * Connects to the currently selected device
  */
 function connect() {
+    let deviceToConnect = SELECTED_DEVICE;
     $.ajax({
         url: '/connect',
         type: 'post',
         data: SELECTED_DEVICE,
         success: () => {
+            $(".device_name").text(`Connected to ${deviceToConnect.device_name}`);
         },
         error: (data) => {
+            let error_field = $(".error_field");
             let json = JSON.parse(data.responseText);
-            $(".error_field").text(json.message);
+            error_field.text(json.message);
+
+            setTimeout(() => error_field.text(""), 2000);
         }
     });
 }
@@ -123,8 +110,11 @@ function discover_devices() {
             });
         },
         error: (data) => {
+            let error_field = $(".error_field");
             let json = JSON.parse(data.responseText);
-            $(".error_field").text(json.message);
+            error_field.text(json.message);
+
+            setTimeout(() => error_field.text(""), 2000);
         }
     });
 }

@@ -9,6 +9,11 @@
     color: red;
 }
 
+.response_field {
+    text-align: center;
+    color: green;
+}
+
 .app_link {
     background-color: transparent;
     border: solid black 2px;
